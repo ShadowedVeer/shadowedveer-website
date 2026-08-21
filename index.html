@@ -67,23 +67,108 @@
       background: rgb(0 0 0 / 40%); color: var(--fg); font-size: .9rem; outline: none; }
     .go, .save { width: 100%; padding: .7rem; border: 0; border-radius: .75rem; background: #fff; color: #111; font-weight: 600; }
     .err { color: var(--danger); font-size: .8rem; margin: 0 0 .5rem; }
-    .player { position: fixed; left: 50%; bottom: 5.25rem; transform: translateX(-50%); z-index: 30;
-      width: min(26rem, calc(100% - 1.25rem)); padding: .5rem .55rem .5rem .5rem; display: none;
-      align-items: center; gap: .7rem; box-shadow: 0 16px 50px rgb(0 0 0 / 55%); }
+    .player { position: fixed; left: 50%; bottom: 5.25rem; z-index: 30;
+      width: min(31rem, calc(100% - 1.25rem)); padding: .7rem .85rem; display: none;
+      align-items: center; gap: .85rem; border-radius: 1.15rem;
+      box-shadow: 0 20px 60px rgb(0 0 0 / 62%), inset 0 1px 0 rgb(255 255 255 / 10%);
+      transform: translateX(-50%) translateY(1rem) scale(.985); opacity: 0;
+      transition: opacity .6s ease, transform .6s cubic-bezier(.2,.85,.3,1); }
     .player.on { display: flex; }
+    .player.in { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
     @media (min-width: 640px) { .player { bottom: 1.35rem; } }
-    .vid { position: relative; width: 5.6rem; height: 3.15rem; border-radius: .5rem; overflow: hidden;
-      flex-shrink: 0; background: #000; }
-    .vid iframe { display: block; }
+
+    /* Cover art bled out behind the glass, so the bar picks up the tone of the track. */
+    .ambient { position: absolute; inset: 0; border-radius: inherit; overflow: hidden;
+      z-index: 0; pointer-events: none; opacity: 0; transition: opacity .9s ease; }
+    .player.playing .ambient { opacity: .55; }
+    .ambient img { position: absolute; top: 50%; left: 50%; width: 135%; height: 340%;
+      transform: translate(-50%, -50%); object-fit: cover;
+      filter: blur(40px) saturate(.3) brightness(.6); }
+    .ambient::after { content: ""; position: absolute; inset: 0;
+      background: linear-gradient(90deg, rgb(10 10 12 / 26%), rgb(10 10 12 / 74%)); }
+    .player > .art, .player > .meta, .player > .ctrls { position: relative; z-index: 1; }
+
+    .art { width: 3.9rem; height: 3.9rem; border-radius: .8rem; overflow: hidden;
+      flex-shrink: 0; background: #000; border: 1px solid var(--border);
+      box-shadow: 0 6px 18px rgb(0 0 0 / 55%);
+      transition: transform .35s cubic-bezier(.2,.8,.3,1), box-shadow .35s ease; }
+    .art:hover { transform: scale(1.045);
+      box-shadow: 0 10px 26px rgb(0 0 0 / 62%), 0 0 0 1px rgb(255 255 255 / 24%); }
+    .art .host, .art iframe { position: absolute; top: 50%; left: 50%; width: 177.78%; height: 100%;
+      transform: translate(-50%, -50%); border: 0; pointer-events: none; }
+    .art .poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      transition: opacity .5s ease; }
+    .player.playing .art .poster { opacity: 0; }
+    .art .spin { position: absolute; inset: 0; z-index: 2; display: none; place-items: center;
+      background: rgb(0 0 0 / 45%); }
+    .player.buffering .art .spin { display: grid; }
+    .art .spin i { display: block; width: 1.05rem; height: 1.05rem; border-radius: 50%;
+      border: 2px solid rgb(255 255 255 / 25%); border-top-color: #fff; animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     .player .meta { min-width: 0; flex: 1; text-align: left; }
-    .player .meta p { margin: 0; font-size: .88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .player .meta span { color: var(--muted); font-size: .72rem; }
-    .ctrls { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
-    .ctrls button { width: 2.15rem; height: 2.15rem; border: 0; background: none; color: var(--fg);
-      display: grid; place-items: center; padding: 0; }
-    .ctrls button svg { width: 1.15rem; height: 1.15rem; fill: currentColor; }
-    .ctrls .play { width: 2.45rem; height: 2.45rem; background: #fff; color: #111; border-radius: 9999px; }
-    .ctrls .play svg { width: 1.05rem; height: 1.05rem; }
+    .titlebox { overflow: hidden; white-space: nowrap; }
+    .titlebox p { margin: 0; font-size: .88rem; font-weight: 500; letter-spacing: -.005em;
+      display: inline-block; white-space: nowrap; text-shadow: 0 1px 8px rgb(0 0 0 / 45%); }
+    .titlebox.scroll p { animation: marquee var(--mqd, 12s) linear infinite; }
+    .titlebox.scroll:hover p { animation-play-state: paused; }
+    @keyframes marquee { 0%, 8% { transform: translateX(0); } 92%, 100% { transform: translateX(var(--mq, 0)); } }
+    .player .meta .sub { display: block; color: var(--subtle); font-size: .69rem; margin-top: .12rem;
+      letter-spacing: .015em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .prog { display: flex; align-items: center; gap: .5rem; margin-top: .45rem; }
+    .time { color: var(--subtle); font-size: .63rem; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+    .bar { position: relative; flex: 1; height: 4px; border-radius: 999px;
+      background: rgb(255 255 255 / 15%); touch-action: none; transition: height .18s ease; }
+    .player:hover .bar { height: 5px; }
+    .bar .fill { position: absolute; top: 0; bottom: 0; left: 0; width: 0; border-radius: 999px;
+      background: linear-gradient(90deg, rgb(255 255 255 / 72%), #fff);
+      box-shadow: 0 0 12px rgb(255 255 255 / 42%); }
+    .bar .dot { position: absolute; top: 50%; left: 0; width: .6rem; height: .6rem; border-radius: 50%;
+      background: #fff; box-shadow: 0 0 0 3px rgb(0 0 0 / 32%), 0 0 12px rgb(255 255 255 / 65%);
+      transform: translate(-50%, -50%) scale(0); transition: transform .18s cubic-bezier(.2,.8,.3,1); }
+    .player:hover .bar .dot { transform: translate(-50%, -50%) scale(1); }
+    .bar.drag .dot { transform: translate(-50%, -50%) scale(1.15); }
+    .bar .hit { position: absolute; left: 0; right: 0; top: -9px; bottom: -9px; }
+
+    .ctrls { position: relative; display: flex; align-items: center; gap: 3px; flex-shrink: 0; }
+    .ctrls button { width: 2.1rem; height: 2.1rem; border: 0; background: none; color: var(--fg);
+      display: grid; place-items: center; padding: 0; border-radius: 9999px; opacity: .82;
+      transition: background .18s ease, transform .18s cubic-bezier(.2,.8,.3,1), opacity .18s ease; }
+    .ctrls button:hover { background: rgb(255 255 255 / 12%); opacity: 1; }
+    .ctrls button:active { transform: scale(.92); }
+    .ctrls button svg { width: 1.05rem; height: 1.05rem; fill: currentColor; }
+    .ctrls .play { width: 2.45rem; height: 2.45rem; background: #fff; color: #111; opacity: 1;
+      box-shadow: 0 2px 14px rgb(255 255 255 / 30%); }
+    .ctrls .play:hover { background: #fff; transform: scale(1.06);
+      box-shadow: 0 3px 20px rgb(255 255 255 / 45%); }
+    .ctrls .play:active { transform: scale(.96); }
+    .ctrls .play svg { width: 1.02rem; height: 1.02rem; }
+
+    .vol { position: relative; display: none; }
+    @media (min-width: 640px) { .vol { display: block; } }
+    .vol-pop { position: absolute; bottom: calc(100% + .6rem); left: 50%; transform: translateX(-50%);
+      padding: .6rem .75rem; display: none; box-shadow: 0 10px 30px rgb(0 0 0 / 55%); }
+    .vol.open .vol-pop { display: block; }
+    .vol-pop input { -webkit-appearance: none; appearance: none; display: block; width: 6rem; height: 4px;
+      border-radius: 999px; background: rgb(255 255 255 / 22%); outline: none; }
+    .vol-pop input::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: .75rem;
+      height: .75rem; border-radius: 50%; background: #fff; box-shadow: 0 0 8px rgb(255 255 255 / 55%); }
+    .vol-pop input::-moz-range-thumb { width: .75rem; height: .75rem; border: 0; border-radius: 50%;
+      background: #fff; box-shadow: 0 0 8px rgb(255 255 255 / 55%); }
+
+    .queue { position: absolute; bottom: calc(100% + .6rem); right: 0; width: 16rem; max-height: 14rem;
+      overflow-y: auto; padding: .35rem; display: none; text-align: left;
+      box-shadow: 0 14px 40px rgb(0 0 0 / 58%); scrollbar-width: thin; }
+    .queue.open { display: block; }
+    .queue button { display: flex; align-items: center; gap: .55rem; width: 100%; height: auto;
+      padding: .4rem .5rem; border-radius: .6rem; color: var(--muted); font-size: .78rem;
+      border: 0; background: none; text-align: left;
+      transition: background .16s ease, color .16s ease; }
+    .queue button:hover { background: rgb(255 255 255 / 9%); color: var(--fg); }
+    .queue button.cur { color: #fff; background: rgb(255 255 255 / 12%); }
+    .queue img { width: 2.15rem; height: 2.15rem; border-radius: .35rem; object-fit: cover; flex-shrink: 0; }
+    .queue span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .admin { display: none; position: relative; z-index: 5; width: min(40rem, 100%); margin: 0 auto; padding: 1.5rem 1rem 6rem; text-align: left; }
     .admin h1 { font-size: 1.5rem; text-shadow: none; }
     .card { padding: 1.15rem; margin-bottom: 1rem; }
@@ -93,6 +178,29 @@
     .ghost { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 9999px; padding: .35rem .75rem; font-size: .75rem; }
     .muted { color: var(--muted); font-size: .85rem; }
     .tiny { color: var(--subtle); font-size: .75rem; }
+    .yt-row { border: 1px solid var(--border); border-radius: .85rem; padding: .7rem;
+      margin: .55rem 0; background: rgb(0 0 0 / 26%); transition: border-color .2s ease; }
+    .yt-row.bad { border-color: rgb(239 68 68 / 55%); }
+    .yt-head { display: flex; align-items: center; gap: .65rem; margin-bottom: .55rem; }
+    .yt-thumb { width: 3.4rem; height: 2.3rem; border-radius: .4rem; object-fit: cover;
+      background: #111; flex-shrink: 0; border: 1px solid var(--border); }
+    .yt-info { min-width: 0; flex: 1; }
+    .yt-name { margin: 0; font-size: .84rem; font-weight: 500;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .yt-chan { display: block; color: var(--subtle); font-size: .7rem; margin-top: .1rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .yt-acts { display: flex; gap: .25rem; flex-shrink: 0; }
+    .yt-acts button { width: 1.9rem; height: 1.9rem; padding: 0; display: grid; place-items: center;
+      border-radius: .5rem; font-size: .78rem; line-height: 1; }
+    .yt-acts button:disabled { opacity: .28; }
+    .yt-acts button.on { background: #fff; color: #111; border-color: #fff; }
+    .yt-row .field { margin: 0; }
+    .yt-msg { margin: .4rem 0 0; font-size: .72rem; color: var(--danger); }
+    .yt-msg:empty { display: none; }
+    .yt-prev { margin-top: .6rem; display: none; border-radius: .6rem; overflow: hidden;
+      aspect-ratio: 16 / 9; background: #000; }
+    .yt-prev.open { display: block; }
+    .yt-prev iframe { width: 100%; height: 100%; border: 0; display: block; }
     body.admin-mode .wrap, body.admin-mode .bg-video, body.admin-mode .veil, body.admin-mode .snow, body.admin-mode .views, body.admin-mode .player, body.admin-mode .login-wrap { display: none !important; }
     body.admin-mode .admin { display: block; }
     body.admin-mode { background: #0a0a0b; }
@@ -134,10 +242,24 @@ Life does really suck you know if you ever thought about it, people treat u as s
   </p>
 
   <div class="player glass" id="player">
-    <div class="vid" id="yt-frame"><div id="yt-host"></div></div>
+    <div class="ambient" id="yt-ambient" aria-hidden="true"><img id="yt-ambient-img" alt="" /></div>
+    <div class="art" id="yt-art">
+      <div class="host" id="yt-host"></div>
+      <img class="poster" id="yt-poster" alt="" />
+      <div class="spin"><i></i></div>
+    </div>
     <div class="meta">
-      <p id="yt-title">Loading…</p>
-      <span id="yt-sub">YouTube</span>
+      <div class="titlebox" id="yt-titlebox"><p id="yt-title">Loading&hellip;</p></div>
+      <span class="sub" id="yt-sub">YouTube</span>
+      <div class="prog">
+        <span class="time" id="yt-cur">0:00</span>
+        <div class="bar" id="yt-bar">
+          <div class="fill" id="yt-fill"></div>
+          <div class="dot" id="yt-dot"></div>
+          <div class="hit"></div>
+        </div>
+        <span class="time" id="yt-dur">0:00</span>
+      </div>
     </div>
     <div class="ctrls">
       <button type="button" id="yt-prev" hidden aria-label="Previous">
@@ -149,6 +271,18 @@ Life does really suck you know if you ever thought about it, people treat u as s
       <button type="button" id="yt-next" hidden aria-label="Next">
         <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2V6zM6 18l8.5-6L6 6v12z"/></svg>
       </button>
+      <div class="vol" id="yt-vol">
+        <button type="button" id="yt-mute" aria-label="Volume">
+          <svg id="yt-vol-icon" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12z"/></svg>
+        </button>
+        <div class="vol-pop glass">
+          <input type="range" id="yt-volrange" min="0" max="100" value="70" aria-label="Volume level" />
+        </div>
+      </div>
+      <button type="button" id="yt-queue-btn" hidden aria-label="Queue">
+        <svg viewBox="0 0 24 24"><path d="M3 6h13v2H3V6zm0 5h13v2H3v-2zm0 5h9v2H3v-2zm15-6 5 3-5 3v-6z"/></svg>
+      </button>
+      <div class="queue glass" id="yt-queue"></div>
     </div>
   </div>
 
@@ -171,7 +305,7 @@ Life does really suck you know if you ever thought about it, people treat u as s
 
   <div class="admin" id="admin">
     <h1>Edit profile</h1>
-    <p class="muted">Changes save in this browser.</p>
+    <p class="muted">Changes publish to everyone who visits your profile.</p>
     <form id="ed">
       <div class="card glass">
         <h2>Identity</h2>
@@ -320,6 +454,22 @@ Life does really suck you know if you ever thought about it, people treat u as s
         p.setAttribute("d", path);
         s.appendChild(p);
         return s;
+      }
+
+      function loadApi() {
+        if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
+        return new Promise(function (resolve) {
+          var prev = window.onYouTubeIframeAPIReady;
+          window.onYouTubeIframeAPIReady = function () {
+            if (prev) prev();
+            resolve(window.YT);
+          };
+          if (!document.querySelector("script[src='https://www.youtube.com/iframe_api']")) {
+            var tag = document.createElement("script");
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(tag);
+          }
+        });
       }
 
       var STORE = "https://textdb.dev/api/data/shadowedveer-profile-6fd8b035d2";
@@ -476,89 +626,244 @@ Life does really suck you know if you ever thought about it, people treat u as s
         return { url: t.url, videoId: t.videoId || ytId(t.url), title: t.title || "" };
       }).filter(function (t) { return t.videoId; });
       if (!adminPage && tracks.length) {
-        var idx = 0, playing = false, player = null, wantPlay = false;
+        var idx = 0, playing = false, player = null, wantPlay = false, dragging = false, ticker = null;
         var playIcon = '<path d="M8 5v14l11-7z"/>';
         var pauseIcon = '<path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/>';
+        var volIcon = '<path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3a4.5 4.5 0 0 0-2.5-4.03v8.06A4.5 4.5 0 0 0 16.5 12z"/>';
+        var muteIcon = '<path d="M3 9v6h4l5 5V4L7 9H3zm18.3-.3-1.4-1.4L17 10.2l-2.9-2.9-1.4 1.4 2.9 2.9-2.9 2.9 1.4 1.4 2.9-2.9 2.9 2.9 1.4-1.4-2.9-2.9 2.9-2.9z"/>';
+        var el = function (id) { return document.getElementById(id); };
+        var P = el("player");
+
+        function fmt(sec) {
+          sec = Math.max(0, Math.floor(sec || 0));
+          var m = Math.floor(sec / 60), r = sec % 60;
+          return m + ":" + (r < 10 ? "0" : "") + r;
+        }
+        function thumb(i, size) {
+          return "https://i.ytimg.com/vi/" + tracks[i].videoId + "/" + size + ".jpg";
+        }
         function setIcon(on) {
-          document.getElementById("yt-play-icon").innerHTML = on ? pauseIcon : playIcon;
-          document.getElementById("yt-play").setAttribute("aria-label", on ? "Pause" : "Play");
+          el("yt-play-icon").innerHTML = on ? pauseIcon : playIcon;
+          el("yt-play").setAttribute("aria-label", on ? "Pause" : "Play");
+          P.classList.toggle("playing", on);
+        }
+        // Long titles get truncated by ellipsis otherwise; scroll only what overflows.
+        function marquee() {
+          var box = el("yt-titlebox");
+          box.classList.remove("scroll");
+          var over = el("yt-title").scrollWidth - box.clientWidth;
+          if (over > 4) {
+            box.style.setProperty("--mq", -(over + 12) + "px");
+            box.style.setProperty("--mqd", Math.max(9, (over + 12) / 20) + "s");
+            box.classList.add("scroll");
+          }
         }
         function setMeta(i) {
           var t = tracks[i];
-          document.getElementById("yt-title").textContent = t.title || "YouTube";
-          document.getElementById("yt-sub").textContent = tracks.length > 1 ? (i + 1) + " / " + tracks.length : "YouTube";
+          el("yt-title").textContent = t.title || "YouTube";
+          var pos = tracks.length > 1 ? (i + 1) + " / " + tracks.length : "";
+          el("yt-sub").textContent = [t.author || "YouTube", pos].filter(Boolean).join("  \u00b7  ");
+          el("yt-poster").src = thumb(i, "hqdefault");
+          var amb = el("yt-ambient-img");
+          if (amb) amb.src = thumb(i, "mqdefault");
+          marquee();
+          drawQueue();
         }
-        function fetchTitle(i) {
+        function fetchMeta(i) {
           var t = tracks[i];
-          if (t.title && t.title !== "YouTube") return;
+          if (t.author) return;
           fetch("https://noembed.com/embed?url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + t.videoId))
             .then(function (r) { return r.json(); })
             .then(function (j) {
-              if (j && j.title) {
-                tracks[i].title = j.title;
-                if (i === idx) setMeta(i);
-              }
+              if (!j) return;
+              if (j.title) tracks[i].title = j.title;
+              if (j.author_name) tracks[i].author = j.author_name;
+              if (i === idx) setMeta(i); else drawQueue();
             }).catch(function () {});
         }
-        document.getElementById("player").classList.add("on");
-        setMeta(0);
-        fetchTitle(0);
-        if (tracks.length > 1) {
-          document.getElementById("yt-prev").hidden = false;
-          document.getElementById("yt-next").hidden = false;
+
+        function paint(ratio, cur, dur) {
+          el("yt-fill").style.width = ratio * 100 + "%";
+          el("yt-dot").style.left = ratio * 100 + "%";
+          el("yt-cur").textContent = fmt(cur);
+          if (dur != null) el("yt-dur").textContent = fmt(dur);
         }
-        function loadApi() {
-          if (window.YT && window.YT.Player) return Promise.resolve(window.YT);
-          return new Promise(function (resolve) {
-            var prev = window.onYouTubeIframeAPIReady;
-            window.onYouTubeIframeAPIReady = function () {
-              if (prev) prev();
-              resolve(window.YT);
+        function progress() {
+          if (!player || !player.getDuration || dragging) return;
+          var d = player.getDuration() || 0, c = player.getCurrentTime() || 0;
+          paint(d ? c / d : 0, c, d);
+        }
+        function ratioAt(e) {
+          var r = el("yt-bar").getBoundingClientRect();
+          return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+        }
+        function seek(ratio) {
+          if (!player || !player.getDuration) return;
+          var d = player.getDuration() || 0;
+          if (!d) return;
+          player.seekTo(d * ratio, true);
+          paint(ratio, d * ratio, d);
+        }
+        var bar = el("yt-bar");
+        bar.addEventListener("pointerdown", function (e) {
+          dragging = true;
+          bar.classList.add("drag");
+          try { bar.setPointerCapture(e.pointerId); } catch (err) {}
+          seek(ratioAt(e));
+        });
+        bar.addEventListener("pointermove", function (e) { if (dragging) seek(ratioAt(e)); });
+        function endDrag(e) {
+          if (!dragging) return;
+          dragging = false;
+          bar.classList.remove("drag");
+          try { bar.releasePointerCapture(e.pointerId); } catch (err) {}
+        }
+        bar.addEventListener("pointerup", endDrag);
+        bar.addEventListener("pointercancel", endDrag);
+
+        var vol = parseInt(localStorage.getItem("sv-vol"), 10);
+        if (!isFinite(vol) || vol < 0 || vol > 100) vol = 70;
+        var muted = localStorage.getItem("sv-muted") === "1";
+        function applyVol() {
+          var off = muted || vol === 0;
+          if (player && player.setVolume) {
+            player.setVolume(vol);
+            if (off) player.mute(); else player.unMute();
+          }
+          el("yt-vol-icon").innerHTML = off ? muteIcon : volIcon;
+          el("yt-volrange").value = off ? 0 : vol;
+          try {
+            localStorage.setItem("sv-vol", String(vol));
+            localStorage.setItem("sv-muted", muted ? "1" : "0");
+          } catch (e) {}
+        }
+        el("yt-volrange").oninput = function () {
+          vol = parseInt(this.value, 10) || 0;
+          muted = vol === 0;
+          applyVol();
+        };
+        el("yt-mute").onclick = function (e) {
+          e.stopPropagation();
+          if (el("yt-vol").classList.contains("open")) { muted = !muted; applyVol(); }
+          else { el("yt-vol").classList.add("open"); el("yt-queue").classList.remove("open"); }
+        };
+
+        function drawQueue() {
+          if (tracks.length < 2) return;
+          var box = el("yt-queue");
+          box.innerHTML = "";
+          tracks.forEach(function (t, i) {
+            var b = document.createElement("button");
+            b.type = "button";
+            if (i === idx) b.className = "cur";
+            var im = document.createElement("img");
+            im.src = thumb(i, "default");
+            im.alt = "";
+            var sp = document.createElement("span");
+            sp.textContent = t.title || "YouTube";
+            b.appendChild(im);
+            b.appendChild(sp);
+            b.onclick = function () {
+              show(i);
+              if (player && player.playVideo) player.playVideo(); else wantPlay = true;
+              box.classList.remove("open");
             };
-            if (!document.querySelector("script[src='https://www.youtube.com/iframe_api']")) {
-              var tag = document.createElement("script");
-              tag.src = "https://www.youtube.com/iframe_api";
-              document.head.appendChild(tag);
-            }
+            box.appendChild(b);
           });
         }
+        el("yt-queue-btn").onclick = function (e) {
+          e.stopPropagation();
+          el("yt-queue").classList.toggle("open");
+          el("yt-vol").classList.remove("open");
+        };
+        document.addEventListener("click", function (e) {
+          if (!el("yt-queue").contains(e.target)) el("yt-queue").classList.remove("open");
+          if (!el("yt-vol").contains(e.target)) el("yt-vol").classList.remove("open");
+        });
+
+        P.classList.add("on");
+        requestAnimationFrame(function () { P.classList.add("in"); });
+        setMeta(0);
+        fetchMeta(0);
+        if (tracks.length > 1) {
+          el("yt-prev").hidden = false;
+          el("yt-next").hidden = false;
+          el("yt-queue-btn").hidden = false;
+          tracks.forEach(function (t, i) { fetchMeta(i); });
+        }
+
         loadApi().then(function (YT) {
           player = new YT.Player("yt-host", {
             videoId: tracks[0].videoId,
-            width: 90,
-            height: 50,
+            width: 320,
+            height: 180,
             playerVars: {
               autoplay: 0, controls: 0, disablekb: 1, fs: 0, modestbranding: 1,
               rel: 0, playsinline: 1, iv_load_policy: 3, origin: location.origin
             },
             events: {
-              onReady: function () { if (wantPlay) player.playVideo(); },
+              onReady: function () {
+                applyVol();
+                progress();
+                if (ticker) clearInterval(ticker);
+                ticker = setInterval(progress, 250);
+                if (wantPlay) player.playVideo();
+              },
               onStateChange: function (e) {
+                P.classList.toggle("buffering", e.data === 3);
                 if (e.data === 1) { playing = true; setIcon(true); }
                 if (e.data === 2) { playing = false; setIcon(false); }
                 if (e.data === 0) {
+                  playing = false;
                   idx = (idx + 1) % tracks.length;
                   setMeta(idx);
-                  fetchTitle(idx);
+                  fetchMeta(idx);
+                  player.loadVideoById(tracks[idx].videoId);
+                }
+              },
+              onError: function () {
+                el("yt-title").textContent = "Track unavailable";
+                if (tracks.length > 1) {
+                  idx = (idx + 1) % tracks.length;
+                  setMeta(idx);
                   player.loadVideoById(tracks[idx].videoId);
                 }
               }
             }
           });
         });
+
         function show(i) {
           idx = i;
           setMeta(i);
-          fetchTitle(i);
+          fetchMeta(i);
+          paint(0, 0, 0);
           if (player && player.loadVideoById) player.loadVideoById(tracks[i].videoId);
         }
-        document.getElementById("yt-play").onclick = function () {
+        function toggle() {
           if (!player || !player.playVideo) { wantPlay = true; return; }
-          if (playing) player.pauseVideo();
-          else player.playVideo();
-        };
-        document.getElementById("yt-prev").onclick = function () { show((idx - 1 + tracks.length) % tracks.length); };
-        document.getElementById("yt-next").onclick = function () { show((idx + 1) % tracks.length); };
+          if (playing) player.pauseVideo(); else player.playVideo();
+        }
+        el("yt-play").onclick = toggle;
+        el("yt-art").onclick = toggle;
+        el("yt-prev").onclick = function () { show((idx - 1 + tracks.length) % tracks.length); };
+        el("yt-next").onclick = function () { show((idx + 1) % tracks.length); };
+
+        document.addEventListener("keydown", function (e) {
+          var t = e.target;
+          if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return;
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          var k = (e.key || "").toLowerCase();
+          if (k === " " || k === "k") { e.preventDefault(); toggle(); }
+          else if (k === "m") { muted = !muted; applyVol(); }
+          else if (k === "arrowright" && player && player.seekTo) { player.seekTo((player.getCurrentTime() || 0) + 5, true); }
+          else if (k === "arrowleft" && player && player.seekTo) { player.seekTo(Math.max(0, (player.getCurrentTime() || 0) - 5), true); }
+          else if (tracks.length > 1 && (k === "n" || k === "p")) {
+            show(k === "n" ? (idx + 1) % tracks.length : (idx - 1 + tracks.length) % tracks.length);
+            if (player && player.playVideo) player.playVideo();
+          }
+        });
+        window.addEventListener("resize", marquee);
       }
 
       if (isAdmin()) {
@@ -603,31 +908,191 @@ Life does really suck you know if you ever thought about it, people treat u as s
               document.getElementById("f-bg").value = url;
             });
           };
+          var embedCache = {};
+          function checkEmbed(id, cb) {
+            if (embedCache[id] !== undefined) { cb(embedCache[id]); return; }
+            loadApi().then(function (YT) {
+              var host = document.createElement("div");
+              host.style.cssText = "position:absolute;left:-9999px;top:0;width:200px;height:120px";
+              document.body.appendChild(host);
+              var done = false, pl = null;
+              function finish(ok) {
+                if (done) return;
+                done = true;
+                embedCache[id] = ok;
+                try { if (pl && pl.destroy) pl.destroy(); } catch (e) {}
+                if (host.parentNode) host.parentNode.removeChild(host);
+                cb(ok);
+              }
+              pl = new YT.Player(host, {
+                videoId: id,
+                playerVars: { controls: 0, playsinline: 1, origin: location.origin },
+                events: {
+                  // Give onError a moment to land; it can arrive just after onReady.
+                  onReady: function () { setTimeout(function () { finish(true); }, 1200); },
+                  onError: function (e) { finish(e.data !== 101 && e.data !== 150); }
+                }
+              });
+              setTimeout(function () { finish(true); }, 9000);
+            }).catch(function () { cb(true); });
+          }
+
+          var metaCache = {};
+          function ytMeta(id, cb) {
+            if (metaCache[id]) { cb(metaCache[id]); return; }
+            fetch("https://noembed.com/embed?url=" + encodeURIComponent("https://www.youtube.com/watch?v=" + id))
+              .then(function (r) { return r.json(); })
+              .then(function (j) {
+                if (!j || j.error) { cb(null); return; }
+                metaCache[id] = { title: j.title || "", author: j.author_name || "" };
+                cb(metaCache[id]);
+              })
+              .catch(function () { cb(null); });
+          }
+
+          function ytRow(t, i) {
+            var row = document.createElement("div");
+            row.className = "yt-row";
+
+            var head = document.createElement("div");
+            head.className = "yt-head";
+            var thumb = document.createElement("img");
+            thumb.className = "yt-thumb";
+            thumb.alt = "";
+            var info = document.createElement("div");
+            info.className = "yt-info";
+            var name = document.createElement("p");
+            name.className = "yt-name";
+            var chan = document.createElement("span");
+            chan.className = "yt-chan";
+            info.appendChild(name);
+            info.appendChild(chan);
+
+            var acts = document.createElement("div");
+            acts.className = "yt-acts";
+            function act(label, title, fn) {
+              var b = document.createElement("button");
+              b.type = "button";
+              b.className = "ghost";
+              b.textContent = label;
+              b.title = title;
+              b.setAttribute("aria-label", title);
+              b.onclick = fn;
+              acts.appendChild(b);
+              return b;
+            }
+
+            var prevBox = document.createElement("div");
+            prevBox.className = "yt-prev";
+            var inp = document.createElement("input");
+            inp.className = "field";
+            inp.placeholder = "https://youtu.be/... or a video ID";
+            inp.value = t.url || "";
+            var msg = document.createElement("p");
+            msg.className = "yt-msg";
+
+            // Emptying the box tears the iframe down, which is what actually stops the audio.
+            var playBtn = act("\u25B6", "Preview", function () {
+              var open = prevBox.classList.toggle("open");
+              playBtn.classList.toggle("on", open);
+              prevBox.innerHTML = "";
+              if (!open) return;
+              var id = ytId(inp.value);
+              if (!id) return;
+              var f = document.createElement("iframe");
+              f.src = "https://www.youtube.com/embed/" + id + "?autoplay=1&rel=0";
+              f.allow = "autoplay; encrypted-media";
+              f.setAttribute("allowfullscreen", "");
+              prevBox.appendChild(f);
+            });
+            var upBtn = act("\u2191", "Move up", function () {
+              if (i === 0) return;
+              yts.splice(i - 1, 0, yts.splice(i, 1)[0]);
+              drawYt();
+            });
+            var dnBtn = act("\u2193", "Move down", function () {
+              if (i === yts.length - 1) return;
+              yts.splice(i + 1, 0, yts.splice(i, 1)[0]);
+              drawYt();
+            });
+            act("\u2715", "Remove", function () { yts.splice(i, 1); drawYt(); });
+            upBtn.disabled = i === 0;
+            dnBtn.disabled = i === yts.length - 1;
+
+            head.appendChild(thumb);
+            head.appendChild(info);
+            head.appendChild(acts);
+
+            function refresh() {
+              var raw = inp.value.trim();
+              var id = ytId(raw);
+              yts[i].url = raw;
+              yts[i].videoId = id || "";
+              row.classList.toggle("bad", !!raw && !id);
+              if (!raw) {
+                msg.textContent = "";
+                thumb.removeAttribute("src");
+                name.textContent = "Empty";
+                chan.textContent = "Paste a YouTube link";
+                return;
+              }
+              if (!id) {
+                msg.textContent = "Not a YouTube link \u2014 this row is dropped when you save.";
+                thumb.removeAttribute("src");
+                name.textContent = "Invalid link";
+                chan.textContent = "";
+                return;
+              }
+              msg.textContent = "";
+              thumb.src = "https://i.ytimg.com/vi/" + id + "/mqdefault.jpg";
+              name.textContent = yts[i].title || "Loading\u2026";
+              chan.textContent = "Checking\u2026";
+              ytMeta(id, function (m) {
+                if (ytId(inp.value) !== id) return;
+                if (!m) { chan.textContent = "Could not reach YouTube"; return; }
+                yts[i].title = m.title || "YouTube";
+                name.textContent = yts[i].title;
+                chan.textContent = m.author || "";
+              });
+              checkEmbed(id, function (ok) {
+                if (ok || ytId(inp.value) !== id) return;
+                row.classList.add("bad");
+                msg.textContent = "This video blocks embedding \u2014 visitors would see \"Track unavailable\". Pick another upload.";
+              });
+            }
+
+            var timer = null;
+            inp.oninput = function () {
+              clearTimeout(timer);
+              timer = setTimeout(refresh, 400);
+            };
+            inp.onblur = refresh;
+
+            row.appendChild(head);
+            row.appendChild(inp);
+            row.appendChild(msg);
+            row.appendChild(prevBox);
+            refresh();
+            return row;
+          }
+
           function drawYt() {
             ytBox.innerHTML = "";
-            yts.forEach(function (t, i) {
-              var row = document.createElement("div");
-              row.className = "row";
-              row.style.margin = "0.4rem 0";
-              var inp = document.createElement("input");
-              inp.className = "field";
-              inp.placeholder = "https://youtu.be/...";
-              inp.value = t.url || "";
-              inp.oninput = function () { yts[i].url = inp.value; };
-              var rm = document.createElement("button");
-              rm.type = "button";
-              rm.className = "ghost";
-              rm.textContent = "X";
-              rm.onclick = function () { yts.splice(i, 1); drawYt(); };
-              row.appendChild(inp);
-              row.appendChild(rm);
-              ytBox.appendChild(row);
-            });
+            if (!yts.length) {
+              var empty = document.createElement("p");
+              empty.className = "tiny";
+              empty.textContent = "No tracks yet \u2014 the player stays hidden until you add one.";
+              ytBox.appendChild(empty);
+              return;
+            }
+            yts.forEach(function (t, i) { ytBox.appendChild(ytRow(t, i)); });
           }
           drawYt();
           document.getElementById("add-yt").onclick = function () {
-            yts.push({ url: "", videoId: "", title: "YouTube" });
+            yts.push({ url: "", videoId: "", title: "" });
             drawYt();
+            var boxes = ytBox.querySelectorAll("input");
+            if (boxes.length) boxes[boxes.length - 1].focus();
           };
           function drawSoc() {
             socBox.innerHTML = "";
