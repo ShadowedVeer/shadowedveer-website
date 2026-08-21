@@ -322,8 +322,58 @@ Life does really suck you know if you ever thought about it, people treat u as s
         return s;
       }
 
+      var STORE = "https://extendsclass.com/api/json-storage/bin/eeaabdf";
       var profile = loadProfile();
       var adminPage = isAdmin();
+
+      function publishProfile(next) {
+        try { localStorage.setItem(KEY, JSON.stringify(next)); } catch (e) {}
+        return fetch(STORE, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            displayName: next.displayName,
+            description: next.description,
+            location: next.location,
+            avatar: next.avatar,
+            background: next.background,
+            socials: next.socials,
+            youtubeTracks: next.youtubeTracks || []
+          })
+        });
+      }
+
+      function loadRemote(cb) {
+        var done = false;
+        function finish(p) {
+          if (done) return;
+          done = true;
+          if (p && p.displayName) profile = p;
+          cb();
+        }
+        fetch(STORE + "?t=" + Date.now(), { cache: "no-store" })
+          .then(function (r) { return r.json(); })
+          .then(function (s) {
+            var local = profile;
+            if (s && s.displayName) {
+              s.youtubeTracks = s.youtubeTracks || [];
+              s.socials = s.socials || DEFAULTS.socials;
+              if (!s.youtubeTracks.length && local.youtubeTracks && local.youtubeTracks.length) {
+                s.youtubeTracks = local.youtubeTracks;
+                publishProfile(s);
+              }
+              try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e2) {}
+              finish(s);
+            } else {
+              if (local.youtubeTracks && local.youtubeTracks.length) publishProfile(local);
+              finish(null);
+            }
+          })
+          .catch(function () { finish(null); });
+        setTimeout(function () { finish(null); }, 2500);
+      }
+
+      loadRemote(function () {
       if (adminPage) {
         document.documentElement.classList.add("admin-on");
         document.body.classList.add("admin-mode");
@@ -629,11 +679,16 @@ Life does really suck you know if you ever thought about it, people treat u as s
               }).filter(Boolean)
             };
             localStorage.setItem(KEY, JSON.stringify(next));
-            alert("Saved.");
-            location.href = "index.html";
+            publishProfile(next).then(function () {
+              alert("Saved. Friends will see the YouTube player too.");
+              location.href = "index.html";
+            }).catch(function () {
+              alert("Saved on this computer, but the public copy failed. Try again.");
+            });
           };
         }
       }
+      });
     })();
   </script>
 </body>
