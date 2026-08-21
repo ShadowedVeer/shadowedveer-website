@@ -807,11 +807,11 @@ Life does really suck you know if you ever thought about it, people treat u as s
                 progress();
                 if (ticker) clearInterval(ticker);
                 ticker = setInterval(progress, 250);
-                if (wantPlay) player.playVideo();
+                if (wantPlay) player.playVideo(); else tryAutoplay();
               },
               onStateChange: function (e) {
                 P.classList.toggle("buffering", e.data === 3);
-                if (e.data === 1) { playing = true; setIcon(true); }
+                if (e.data === 1) { playing = true; setIcon(true); disarmGesture(); }
                 if (e.data === 2) { playing = false; setIcon(false); }
                 if (e.data === 0) {
                   playing = false;
@@ -839,6 +839,39 @@ Life does really suck you know if you ever thought about it, people treat u as s
           fetchMeta(i);
           paint(0, 0, 0);
           if (player && player.loadVideoById) player.loadVideoById(tracks[i].videoId);
+        }
+        // Browsers refuse unmuted playback until the visitor has interacted, and
+        // playVideo() reports nothing when it is refused -- so try it, then read the
+        // player state back to find out whether it actually took.
+        var gestureEvents = ["pointerdown", "touchstart"];
+        var gestureOn = false;
+        function onGesture(e) {
+          // Anything inside the bar has its own handler; letting both fire races
+          // the play button against itself and swallows the first click.
+          if (P.contains(e.target)) return;
+          if (player && player.playVideo) player.playVideo();
+        }
+        function armGesture() {
+          if (gestureOn) return;
+          gestureOn = true;
+          gestureEvents.forEach(function (n) {
+            window.addEventListener(n, onGesture, { capture: true, passive: true });
+          });
+        }
+        function disarmGesture() {
+          if (!gestureOn) return;
+          gestureOn = false;
+          gestureEvents.forEach(function (n) {
+            window.removeEventListener(n, onGesture, true);
+          });
+        }
+        function tryAutoplay() {
+          if (!player || !player.playVideo) return;
+          player.playVideo();
+          setTimeout(function () {
+            var st = player.getPlayerState ? player.getPlayerState() : -1;
+            if (st !== 1 && st !== 3) armGesture();
+          }, 1200);
         }
         function toggle() {
           if (!player || !player.playVideo) { wantPlay = true; return; }
