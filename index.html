@@ -322,14 +322,14 @@ Life does really suck you know if you ever thought about it, people treat u as s
         return s;
       }
 
-      var STORE = "https://extendsclass.com/api/json-storage/bin/eeaabdf";
+      var STORE = "https://textdb.dev/api/data/shadowedveer-profile-6fd8b035d2";
       var profile = loadProfile();
       var adminPage = isAdmin();
 
       function publishProfile(next) {
         try { localStorage.setItem(KEY, JSON.stringify(next)); } catch (e) {}
         return fetch(STORE, {
-          method: "PUT",
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             displayName: next.displayName,
@@ -340,6 +340,9 @@ Life does really suck you know if you ever thought about it, people treat u as s
             socials: next.socials,
             youtubeTracks: next.youtubeTracks || []
           })
+        }).then(function (r) {
+          if (!r.ok) throw new Error("publish failed: HTTP " + r.status);
+          return r;
         });
       }
 
